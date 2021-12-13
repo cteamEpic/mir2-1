@@ -1301,6 +1301,7 @@ namespace Client.MirObjects
 
                             if (!RidingMount)
                             {
+                                //GameScene.Slaying = true;
                                 if (GameScene.Slaying && TargetObject != null)
                                     Spell = Spell.Slaying;
 

@@ -41,6 +41,8 @@ namespace Client.MirObjects
 
         public byte PercentHealth;
         public long HealthTime;
+        public MirLabel HealthLabel;
+        public string HealthStr = string.Empty;
 
         public List<QueuedAction> ActionFeed = new List<QueuedAction>();
         public QueuedAction NextAction
@@ -161,14 +163,14 @@ namespace Client.MirObjects
                     };
                     break;
                 case BuffType.MagicBooster:
-					Effects.Add(new BuffEffect(Libraries.Magic3, 90, 6, 1200, this, true, type) { Repeat = true });
+                    Effects.Add(new BuffEffect(Libraries.Magic3, 90, 6, 1200, this, true, type) { Repeat = true });
                     break;
                 case BuffType.PetEnhancer:
                     Effects.Add(new BuffEffect(Libraries.Magic3, 230, 6, 1200, this, true, type) { Repeat = true });
                     break;
-				case BuffType.GameMaster:
-					Effects.Add(new BuffEffect(Libraries.CHumEffect[5], 0, 1, 1200, this, true, type) { Repeat = true });
-					break;
+                case BuffType.GameMaster:
+                    Effects.Add(new BuffEffect(Libraries.CHumEffect[5], 0, 1, 1200, this, true, type) { Repeat = true });
+                    break;
                 case BuffType.GeneralMeowMeowShield:
                     Effects.Add(new BuffEffect(Libraries.Monsters[(ushort)Monster.GeneralMeowMeow], 529, 7, 700, this, true, type) { Repeat = true, Light = 1 });
                     MirSounds.SoundManager.PlaySound(8322);
@@ -321,7 +323,7 @@ namespace Client.MirObjects
             CreateLabel();
 
             if (NameLabel == null) return;
-            
+
             NameLabel.Text = Name;
             NameLabel.Location = new Point(DisplayRectangle.X + (50 - NameLabel.Size.Width) / 2, DisplayRectangle.Y - (32 - NameLabel.Size.Height / 2) + (Dead ? 35 : 8)); //was 48 -
             NameLabel.Draw();
@@ -363,9 +365,9 @@ namespace Client.MirObjects
 
             if (CMain.Time >= HealthTime)
             {
-                if (Race == ObjectType.Monster && !Name.EndsWith(string.Format("({0})", User.Name)) && !GroupDialog.GroupList.Contains(name)) return;
-                if (Race == ObjectType.Player && this != User && !GroupDialog.GroupList.Contains(Name)) return;
-                if (this == User && GroupDialog.GroupList.Count == 0) return;
+                //if (Race == ObjectType.Monster && !Name.EndsWith(string.Format("({0})", User.Name)) && !GroupDialog.GroupList.Contains(name)) return;
+                //if (Race == ObjectType.Player && this != User && !GroupDialog.GroupList.Contains(Name)) return;
+                //if (this == User && GroupDialog.GroupList.Count == 0) return;
             }
 
 
@@ -383,7 +385,42 @@ namespace Client.MirObjects
             }
 
             Libraries.Prguse2.Draw(index, new Rectangle(0, 0, (int)(32 * PercentHealth / 100F), 4), new Point(DisplayRectangle.X + 8, DisplayRectangle.Y - 64), Color.White, false);
+
+            var showHpDigits = true;
+            if (showHpDigits)
+            {
+                DrawHealthValue(DisplayRectangle.Location);
+            }
         }
+
+        // Draw Initial Health Percentage as string
+        public void DrawHealthValue(Point displayLocation)
+        {
+
+            if (HealthLabel == null)
+            {
+                HealthLabel = new MirLabel
+                {
+                    AutoSize = true,
+                    BackColour = Color.Transparent,
+                    ForeColour = Color.LightGray,
+                    OutLine = true,
+                    OutLineColour = Color.Black,
+                    Text = ((int)PercentHealth).ToString(),
+                    Font = new Font(Settings.FontName, 8F, FontStyle.Bold)
+                };
+            } else
+            {
+                HealthLabel.Text = ((int)PercentHealth).ToString();
+            }
+            
+
+            displayLocation.Offset((int)(15 - (((int)PercentHealth).ToString().Length * 3)), -64);
+
+            HealthLabel.Location = displayLocation;
+            HealthLabel.Draw();
+        }
+
 
         public void DrawPoison()
         {

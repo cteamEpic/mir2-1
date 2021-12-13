@@ -21,7 +21,7 @@ namespace Launcher
 
         private FileInformation _currentFile;
         public bool Completed, Checked, CleanFiles, LabelSwitch, ErrorFound;
-        
+
         public List<FileInformation> OldList;
         public Queue<FileInformation> DownloadList;
 
@@ -101,10 +101,10 @@ namespace Launcher
             }
         }
 
-        
+
 
         private void BeginDownload()
-        {           
+        {
             if (DownloadList == null) return;
 
             if (DownloadList.Count == 0)
@@ -510,13 +510,18 @@ namespace Launcher
             else ProgTotalEnd_pb.Visible = true;
         }
 
+        private void Main_browser_Click(object sender, EventArgs e)
+        {
+
+        }
+
         private void InterfaceTimer_Tick(object sender, EventArgs e)
         {
             try
             {
                 if (Completed)
                 {
-                    
+
                     ActionLabel.Text = "";
                     CurrentFile_label.Text = "Up to date.";
                     SpeedLabel.Text = "";
@@ -578,7 +583,7 @@ namespace Launcher
             }
             catch (Exception ex)
             {
-                
+
             }
 
         }

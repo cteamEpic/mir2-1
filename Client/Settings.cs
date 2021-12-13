@@ -69,7 +69,7 @@ namespace Client
         public static int RemainingErrorLogs = 100;
 
         //Graphics
-        public static bool FullScreen = true, Borderless = true, TopMost = true;
+        public static bool FullScreen = false, Borderless = true, TopMost = true;
         public static string FontName = "Tahoma"; //"MS Sans Serif"
         public static float FontSize = 8F;
         public static bool UseMouseCursors = true;
