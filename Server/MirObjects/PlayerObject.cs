@@ -28,7 +28,7 @@ namespace Server.MirObjects
 
         public short TransformType;
         public short Looks_Armour = 0, Looks_Weapon = -1, Looks_WeaponEffect = 0;
-		public byte Looks_Wings = 0;
+        public byte Looks_Wings = 0;
 
         public bool WarZone = false;
 
@@ -844,7 +844,8 @@ namespace Server.MirObjects
                 }
             }
 
-            if (refresh) {
+            if (refresh)
+            {
                 RefreshStats();
             }
         }
@@ -1388,7 +1389,7 @@ namespace Server.MirObjects
                         Enqueue(new S.DeleteItem { UniqueID = item.UniqueID, Count = count });
                         item.Count -= count;
 
-                        Report.ItemChanged( item, count, 1);
+                        Report.ItemChanged(item, count, 1);
                     }
                     else if (Envir.Random.Next(30) == 0)
                     {
@@ -3109,7 +3110,7 @@ namespace Server.MirObjects
         private void RefreshSkills()
         {
             int[] spiritSwordLvPlus = { 0, 3, 5, 8 };
-            int[] slayingLvPlus = {5, 6, 7, 8};
+            int[] slayingLvPlus = { 5, 6, 7, 8 };
             for (int i = 0; i < Info.Magics.Count; i++)
             {
                 UserMagic magic = Info.Magics[i];
@@ -3231,7 +3232,7 @@ namespace Server.MirObjects
                         return Color.Blue;
                     else
                         if (MyGuild.IsEnemy(player.MyGuild))
-                            return Color.Orange;
+                        return Color.Orange;
             return NameColour;
         }
 
@@ -4437,7 +4438,7 @@ namespace Server.MirObjects
                     case "LEAVEGUILD":
                         if (MyGuild == null) return;
                         if (MyGuildRank == null) return;
-                        if(MyGuild.IsAtWar())
+                        if (MyGuild.IsAtWar())
                         {
                             ReceiveChat("Cannot leave guild whilst at war.", ChatType.System);
                             return;
@@ -5599,7 +5600,7 @@ namespace Server.MirObjects
         }
         public void Run(MirDirection dir)
         {
-            var steps = RidingMount || ActiveSwiftFeet && !Sneaking? 3 : 2;
+            var steps = RidingMount || ActiveSwiftFeet && !Sneaking ? 3 : 2;
 
             if (!CanMove || !CanWalk || !CanRun)
             {
@@ -6333,10 +6334,10 @@ namespace Server.MirObjects
                 if (Info.Equipment[(int)EquipmentSlot.Weapon] == null) return;
                 if (!Info.Equipment[(int)EquipmentSlot.Weapon].Info.CanMine) return;
                 if (Info.Equipment[(int)EquipmentSlot.Weapon].CurrentDura <= 0)//Stop dura 0 working. use below if you wish to break the item.
-                /*{
-                    Enqueue(new S.DeleteItem { UniqueID = Info.Equipment[(int)EquipmentSlot.Weapon].UniqueID, Count = Info.Equipment[(int)EquipmentSlot.Weapon].Count });
-                    Info.Equipment[(int)EquipmentSlot.Weapon] = null;
-                    RefreshStats();*/
+                    /*{
+                        Enqueue(new S.DeleteItem { UniqueID = Info.Equipment[(int)EquipmentSlot.Weapon].UniqueID, Count = Info.Equipment[(int)EquipmentSlot.Weapon].Count });
+                        Info.Equipment[(int)EquipmentSlot.Weapon] = null;
+                        RefreshStats();*/
                     return;
                 /*}*/
                 if (CurrentMap.Mine == null) return;
@@ -7376,6 +7377,11 @@ namespace Server.MirObjects
         }
         private void SummonShinsu(UserMagic magic)
         {
+            if (IsGM)
+            {
+                _SummonShinsuGM(magic);
+                return;
+            }
             MonsterObject monster;
             for (int i = 0; i < Pets.Count; i++)
             {
@@ -7408,6 +7414,51 @@ namespace Server.MirObjects
 
             DelayedAction action = new DelayedAction(DelayedType.Magic, Envir.Time + 500, this, magic, monster, Front);
             CurrentMap.ActionList.Add(action);
+        }
+
+        private void _SummonShinsuGM(UserMagic magic)
+        {
+            var maximumShinsuAllowed = 20;
+            var existingShinsus = new List<MonsterObject>();
+            for (int i = 0; i < Pets.Count; i++)
+            {
+                var shinsu = Pets[i];
+                if ((shinsu.Info.Name != Settings.ShinsuName) || shinsu.Dead) continue;
+                if (shinsu.Node == null) continue;
+                existingShinsus.Add(shinsu);
+            }
+
+            // Recall
+            if (existingShinsus.Count >= maximumShinsuAllowed)
+            {
+                foreach (var shinsu in existingShinsus)
+                {
+                    shinsu.ActionList.Add(new DelayedAction(DelayedType.Recall, Envir.Time + 500));
+                }
+                return;
+            };
+
+            MonsterInfo info = Envir.GetMonsterInfo(Settings.ShinsuName);
+            if (info == null) return;
+
+            int shinsusToSummonCount = maximumShinsuAllowed - existingShinsus.Count;
+            if (shinsusToSummonCount <= 0) return;
+
+            for (int i = 0; i < shinsusToSummonCount; i++)
+            {
+                LevelMagic(magic);
+
+                var shinsu = MonsterObject.GetMonster(info);
+                shinsu.PetLevel = 14;
+                shinsu.Master = this;
+                //shinsu.MaxPetLevel = (byte)(1 + magic.Level * 2);
+                shinsu.MaxPetLevel = (byte)(18);
+                shinsu.Direction = Direction;
+                shinsu.ActionTime = Envir.Time + 1000;
+
+                DelayedAction action = new DelayedAction(DelayedType.Magic, Envir.Time + 500, this, magic, shinsu, Front);
+                CurrentMap.ActionList.Add(action);
+            }
         }
         private void Hiding(UserMagic magic)
         {
@@ -7690,7 +7741,7 @@ namespace Server.MirObjects
                         {
                             stats[Stat.MaxDC] = value;
                         }
-                        else if  (((PlayerObject)target).Class == MirClass.Wizard || ((PlayerObject)target).Class == MirClass.Archer)
+                        else if (((PlayerObject)target).Class == MirClass.Wizard || ((PlayerObject)target).Class == MirClass.Archer)
                         {
                             stats[Stat.MaxMC] = value;
                         }
@@ -7720,6 +7771,9 @@ namespace Server.MirObjects
 
             PoisonType pType = PoisonType.None;
 
+            // switch (Info.Shape)
+            // 1 is GreyPoison
+            // 2 is YellowPoison
             UserItem itemp = GetPoison(1, 1);
 
             if (itemp != null)
@@ -7787,7 +7841,7 @@ namespace Server.MirObjects
         private void BladeAvalanche(UserMagic magic)
         {
             int damageBase = GetAttackPower(Stats[Stat.MinDC], Stats[Stat.MaxDC]);
-            if (Envir.Random.Next(0,100) <= (1 + Stats[Stat.Luck]))
+            if (Envir.Random.Next(0, 100) <= (1 + Stats[Stat.Luck]))
                 damageBase += damageBase;//crit should do something like double dmg, not double max dc dmg!
             int damageFinal = magic.GetDamage(damageBase);
 
@@ -8377,7 +8431,7 @@ namespace Server.MirObjects
                                 //Only targets
                                 if (ob.IsAttackTarget(this))
                                 {
-                                    DelayedAction action = new DelayedAction(DelayedType.Damage, AttackTime, ob,magic.GetDamage(GetAttackPower(Stats[Stat.MinDC], Stats[Stat.MaxDC])), DefenceType.AC, true);
+                                    DelayedAction action = new DelayedAction(DelayedType.Damage, AttackTime, ob, magic.GetDamage(GetAttackPower(Stats[Stat.MinDC], Stats[Stat.MaxDC])), DefenceType.AC, true);
                                     ActionList.Add(action);
                                     success = true;
                                     if ((((ob.Race != ObjectType.Player) || Settings.PvpCanResistPoison) && (Envir.Random.Next(Settings.PoisonAttackWeight) >= ob.Stats[Stat.PoisonResist])) && (Envir.Random.Next(15) <= magic.Level + 1))
@@ -8931,7 +8985,7 @@ namespace Server.MirObjects
 
                 #region StormEscape
                 case Spell.StormEscape:
-                    location = (Point) data[1];
+                    location = (Point)data[1];
                     if (CurrentMap.Info.NoTeleport)
                     {
                         ReceiveChat(("You cannot teleport on this map"), ChatType.System);
@@ -9557,7 +9611,7 @@ namespace Server.MirObjects
                     DelayedAction action = new DelayedAction(DelayedType.Magic, Envir.Time + 500, this, magic, monster, location);
                     CurrentMap.ActionList.Add(action);
                     break;
-                #endregion
+                    #endregion
 
             }
         }
@@ -9794,10 +9848,11 @@ namespace Server.MirObjects
         public void LevelMagic(UserMagic magic)
         {
             byte exp = (byte)(Envir.Random.Next(3) + 1);
-            if (exp * 5 < byte.MaxValue)
+            if (exp * 15 < byte.MaxValue)
             {
-                exp *= 5;
-            } else
+                exp *= 15;
+            }
+            else
             {
                 exp = byte.MaxValue;
             }
@@ -10101,8 +10156,8 @@ namespace Server.MirObjects
             {
                 ObjectID = ObjectID,
                 Weapon = Looks_Weapon,
-				WeaponEffect = Looks_WeaponEffect,
-				Armour = Looks_Armour,
+                WeaponEffect = Looks_WeaponEffect,
+                Armour = Looks_Armour,
                 Light = Light,
                 WingEffect = Looks_Wings
             };
@@ -10140,8 +10195,8 @@ namespace Server.MirObjects
                 Direction = Direction,
                 Hair = Hair,
                 Weapon = Looks_Weapon,
-				WeaponEffect = Looks_WeaponEffect,
-				Armour = Looks_Armour,
+                WeaponEffect = Looks_WeaponEffect,
+                Armour = Looks_Armour,
                 Light = Light,
                 Poison = CurrentPoison,
                 Dead = Dead,
@@ -10817,7 +10872,7 @@ namespace Server.MirObjects
                     Enqueue(new S.RefreshItem { Item = temp });
                 }
 
-                switch(temp.Info.Shape)
+                switch (temp.Info.Shape)
                 {
                     case 1:
                         if (item.Info.Type != ItemType.Weapon)
@@ -12149,7 +12204,7 @@ namespace Server.MirObjects
                 return;
             }
 
-            if(tempTo.Info.Type != ItemType.Bait && (gridFrom == MirGridType.Fishing || gridTo == MirGridType.Fishing))
+            if (tempTo.Info.Type != ItemType.Bait && (gridFrom == MirGridType.Fishing || gridTo == MirGridType.Fishing))
             {
                 Enqueue(p);
                 return;
@@ -13638,7 +13693,7 @@ namespace Server.MirObjects
             }
             else
                 if (item.Weight - (Info.Equipment[slot] != null ? Info.Equipment[slot].Weight : 0) + CurrentWearWeight > Stats[Stat.WearWeight])
-                    return false;
+                return false;
 
             if (RidingMount && item.Info.Type != ItemType.Torch)
             {
@@ -16466,7 +16521,7 @@ namespace Server.MirObjects
             //refresh guildbuffs
             RefreshStats();
             if (MyGuild.BuffList.Count > 0)
-                Enqueue(new S.GuildBuffList() { ActiveBuffs = MyGuild.BuffList});
+                Enqueue(new S.GuildBuffList() { ActiveBuffs = MyGuild.BuffList });
         }
         public void RequestGuildInfo(byte Type)
         {
@@ -17117,7 +17172,7 @@ namespace Server.MirObjects
 
         public void TradeConfirm(bool confirm)
         {
-            if(!confirm)
+            if (!confirm)
             {
                 TradeLocked = false;
                 return;
@@ -17236,7 +17291,7 @@ namespace Server.MirObjects
 
                         if (temp == null) continue;
 
-                        if(FreeSpace(TradePair[p].Info.Inventory) < 1)
+                        if (FreeSpace(TradePair[p].Info.Inventory) < 1)
                         {
                             TradePair[p].GainItemMail(temp, 1);
                             Report.ItemMailed(temp, temp.Count, 1);
@@ -17319,7 +17374,7 @@ namespace Server.MirObjects
                 RidingMount = false;
             }
 
-            if(refreshStats)
+            if (refreshStats)
                 RefreshStats();
 
             Broadcast(GetMountInfo());
@@ -18148,7 +18203,7 @@ namespace Server.MirObjects
 
                     if (item == null || items[j] != item.UniqueID) continue;
 
-                    if(item.Info.Bind.HasFlag(BindMode.DontTrade))
+                    if (item.Info.Bind.HasFlag(BindMode.DontTrade))
                     {
                         ReceiveChat(string.Format("{0} cannot be mailed", item.FriendlyName), ChatType.System);
                         return;
@@ -20337,11 +20392,11 @@ namespace Server.MirObjects
             LastRankRequest[RankType] = Envir.Time;
             if (RankType == 0)
             {
-                Enqueue(new S.Rankings { Listings = Envir.RankTop, RankType = RankType, MyRank = Info.Rank[0]});
+                Enqueue(new S.Rankings { Listings = Envir.RankTop, RankType = RankType, MyRank = Info.Rank[0] });
             }
             else
             {
-                Enqueue(new S.Rankings { Listings = Envir.RankClass[RankType - 1], RankType = RankType, MyRank = (byte)Class == (RankType -1)?Info.Rank[1]: 0});
+                Enqueue(new S.Rankings { Listings = Envir.RankClass[RankType - 1], RankType = RankType, MyRank = (byte)Class == (RankType - 1) ? Info.Rank[1] : 0 });
             }
         }
 
@@ -20600,7 +20655,7 @@ namespace Server.MirObjects
 
             ItemRentalRemoveLocks();
 
-            var rentalPair = new []  {
+            var rentalPair = new[]  {
                 ItemRentalPartner,
                 this
             };
