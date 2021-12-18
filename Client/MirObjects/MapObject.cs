@@ -111,6 +111,7 @@ namespace Client.MirObjects
             GameScene.Scene.NPCDialog.Hide();
         }
 
+        // change object states && redrawing
         public abstract void Process();
         public abstract void Draw();
         public abstract bool MouseOver(Point p);
