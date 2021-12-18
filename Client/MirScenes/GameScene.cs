@@ -883,11 +883,15 @@ namespace Client.MirScenes
                 default:
                     User.NextMagic = magic;
                     User.NextMagicLocation = MapControl.MapLocation;
-                    User.NextMagicObject = MapObject.MouseObject;
+                    // do not update the target of next magic, unless a new non-null target is specified. 
+                    var mTarget = MapObject.MouseObject;
+                    if (( mTarget is MonsterObject && MapObject.MouseObject.AI != 6) || mTarget is UserObject || mTarget is PlayerObject)
+                    {
+                        User.NextMagicObject = MapObject.MouseObject;
+                    }
                     User.NextMagicDirection = MapControl.MouseDirection();
                     break;
             }
-
         }
 
         public void QuitGame()
@@ -10080,6 +10084,7 @@ namespace Client.MirScenes
                  && !(MapObject.MouseObject is MonsterObject && MapObject.MouseObject.AI == 70))
             {
                 MapObject.TargetObject = MapObject.MouseObject;
+                // TODO magic smart targeting
                 if (MapObject.MouseObject is MonsterObject && MapObject.MouseObject.AI != 6)
                     MapObject.MagicObject = MapObject.TargetObject;
             }
@@ -10161,7 +10166,9 @@ namespace Client.MirScenes
                 direction = MouseDirection();
                 if (AutoRun)
                 {
-                    if (GameScene.CanRun && CanRun(direction) && CMain.Time > GameScene.NextRunTime && User.HP >= 10 && (!User.Sneaking || (User.Sneaking && User.Sprint))) //slow remove
+                    // run ignore struck
+                    //if (GameScene.CanRun && CanRun(direction) && CMain.Time > GameScene.NextRunTime && User.HP >= 10 && (!User.Sneaking || (User.Sneaking && User.Sprint))) //slow remove
+                    if (GameScene.CanRun && CanRun(direction) && User.HP >= 10 && (!User.Sneaking || (User.Sneaking && User.Sprint))) //slow remove
                     {
                         int distance = User.RidingMount || User.Sprint && !User.Sneaking ? 3 : 2;
                         bool fail = false;
@@ -10318,7 +10325,9 @@ namespace Client.MirScenes
 
                         GameScene.CanRun = User.FastRun ? true : GameScene.CanRun;
 
-                        if (GameScene.CanRun && CanRun(direction) && CMain.Time > GameScene.NextRunTime && User.HP >= 10 && (!User.Sneaking || (User.Sneaking && User.Sprint))) //slow removed
+                        //if (GameScene.CanRun && CanRun(direction) && CMain.Time > GameScene.NextRunTime && User.HP >= 10 && (!User.Sneaking || (User.Sneaking && User.Sprint))) //slow removed
+                        // run ignore struck
+                        if (GameScene.CanRun && CanRun(direction) && User.HP >= 10 && (!User.Sneaking || (User.Sneaking && User.Sprint))) //slow removed
                         {
                             int distance = User.RidingMount || User.Sprint && !User.Sneaking ? 3 : 2;
                             bool fail = false;
