@@ -469,11 +469,19 @@ namespace Server.MirEnvir
                             break;
                     }
 
+                    GetWalkableCells();
+
                     for (int i = 0; i < Info.Respawns.Count; i++)
                     {
                         MapRespawn info = new MapRespawn(Info.Respawns[i]);
                         if (info.Monster == null) continue;
                         info.Map = this;
+                        info.WalkableCells = WalkableCells.Where(x =>
+                        x.X <= info.Info.Location.X + info.Info.Spread &&
+                        x.X >= info.Info.Location.X - info.Info.Spread &&
+                        x.Y <= info.Info.Location.Y + info.Info.Spread &&
+                        x.Y >= info.Info.Location.Y - info.Info.Spread).ToList();
+
                         Respawns.Add(info);
 
                         if ((info.Info.SaveRespawnTime) && (info.Info.RespawnTicks != 0))
@@ -503,6 +511,19 @@ namespace Server.MirEnvir
 
             MessageQueue.Enqueue("Failed to Load Map: " + Info.FileName);
             return false;
+        }
+
+        public void GetWalkableCells()
+        {
+            if (WalkableCells == null)
+            {
+                WalkableCells = new List<Point>();
+
+                for (int x = 0; x < Width; x++)
+                    for (int y = 0; y < Height; y++)
+                        if (Cells[x, y].Attribute == CellAttribute.Walk)
+                            WalkableCells.Add(new Point(x, y));
+            }
         }
 
         private void CreateSafeZone(SafeZoneInfo info)
@@ -798,9 +819,9 @@ namespace Server.MirEnvir
             }
         }
 
-        /**
+         /**
          * return the coordinates of effect coordinates within an n x n square
-         * then use GetCell() in Map.cs to retrive objects the real objects
+         * then use GetCell() in Map.cs to retrive real objects
          * default 3x3
          */
         public static List<(int X, int Y)> GetEffectiveSquare(Point location, int mapWidth, int mapHeight, int squareEdgeLength = 3)
@@ -1857,10 +1878,14 @@ namespace Server.MirEnvir
                 #region Plague
 
                 case Spell.Plague:
-                    // value === magic.GetDamage(GetAttackPower(Stats[Stat.MinSC], Stats[Stat.MaxSC]))
+                    // DelayedAction action = new DelayedAction(DelayedType.Magic, Envir.Time + delay, this, magic, magic.GetDamage(GetAttackPower(Stats[Stat.MinSC], Stats[Stat.MaxSC])), location, pType);
+                    // (int)data[2] === magic.GetDamage(GetAttackPower(Stats[Stat.MinSC], Stats[Stat.MaxSC]))
+                    // (Point)data[3] === location
+                    // (PoisonType)data[4] === pType
                     value = (int)data[2];
                     location = (Point)data[3];
 
+                    // the skill affect a 3x3 square
                     var posLists = GetEffectiveSquare(location, Width, Height, 5);
                     foreach ((var posX, var posY) in posLists)
                     {
@@ -1886,9 +1911,7 @@ namespace Server.MirEnvir
                                         else if (new int[] { 3, 4 }.Contains(chance)) //2 in 15 chances it'll freeze
                                             poison = PoisonType.Frozen;
                                         else if (new int[] { 5, 6, 7, 8, 9 }.Contains(chance)) //5 in 15 chances it'll red/green
-                                            // (depends on what poison player is holding)
-                                            // DelayedAction action = new DelayedAction(DelayedType.Magic, Envir.Time + delay, this, magic, magic.GetDamage(GetAttackPower(Stats[Stat.MinSC], Stats[Stat.MaxSC])), location, pType);
-                                            // data[4] is the pType
+                                            // (whatever type of poison player is holding)
                                             poison = (PoisonType)data[4];
                                         else //5 in 15 chances it'll do nothing
                                             poison = PoisonType.None;
@@ -1930,7 +1953,6 @@ namespace Server.MirEnvir
                                     break;
                             }
                         }
-
                     }
                     break;
 
@@ -2351,6 +2373,7 @@ namespace Server.MirEnvir
         public byte ErrorCount = 0;
 
         public List<RouteInfo> Route;
+        public List<Point> WalkableCells;
 
         public MapRespawn(RespawnInfo info)
         {
